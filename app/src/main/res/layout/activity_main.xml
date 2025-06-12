@@ -9,48 +9,62 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="32dp"
-        android:text="PDF Reader"
+        android:layout_marginBottom="16dp"
+        android:text="PDF Reader (Page Mode)"
         android:textSize="24sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/onlinePdf"
+    <!-- Page navigation controls -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="Open Online PDF"
-        android:textAllCaps="false" />
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/pickPdfButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="Pick PDF from Device"
-        android:textAllCaps="false" />
+        <Button
+            android:id="@+id/prevButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="◀ Previous"
+            android:enabled="false" />
 
-    <Button
-        android:id="@+id/fromAssets"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="Open PDF from Assets"
-        android:textAllCaps="false" />
+        <TextView
+            android:id="@+id/pageInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:text="Page 1 of 1"
+            android:textSize="16sp" />
 
-    <Button
-        android:id="@+id/showInView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:text="Show PDF in View"
-        android:textAllCaps="false" />
+        <Button
+            android:id="@+id/nextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Next ▶"
+            android:enabled="false" />
 
+    </LinearLayout>
+
+    <!-- PDF Image View -->
+    <ImageView
+        android:id="@+id/pdfPageView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#f0f0f0"
+        android:contentDescription="PDF Page"
+        android:scaleType="fitCenter" />
+
+    <!-- Load PDF button -->
     <Button
-        android:id="@+id/openInCompose"
+        android:id="@+id/loadPdfButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Open in Compose imp"
+        android:layout_marginTop="16dp"
+        android:text="Load Sample PDF"
         android:textAllCaps="false" />
 
 </LinearLayout>
