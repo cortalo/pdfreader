@@ -9,9 +9,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_marginBottom="16dp"
-        android:text="PDF Reader (Page Mode)"
+        android:layout_marginBottom="8dp"
+        android:text="Synchronized PDF Reader"
         android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Connection Status -->
+    <TextView
+        android:id="@+id/connectionStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:text="📶 Connected"
+        android:textSize="16sp"
+        android:textColor="@android:color/holo_green_dark"
         android:textStyle="bold" />
 
     <!-- Page navigation controls -->
@@ -36,7 +48,8 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
             android:text="Page 1 of 1"
-            android:textSize="16sp" />
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/nextButton"
@@ -66,5 +79,16 @@
         android:layout_marginTop="16dp"
         android:text="Load Sample PDF"
         android:textAllCaps="false" />
+
+    <!-- Instructions -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="8dp"
+        android:text="Navigation will sync automatically between connected devices"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:textAlignment="center" />
 
 </LinearLayout>

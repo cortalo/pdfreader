@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center_horizontal">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Synchronized PDF Reader"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"
+        android:textAlignment="center" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pair devices to sync PDF navigation"
+        android:textSize="16sp"
+        android:layout_marginBottom="24dp"
+        android:textAlignment="center"
+        android:textColor="@android:color/darker_gray" />
+
+    <!-- Control Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/toggleButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable Bluetooth"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/serverButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start Server"
+                android:textSize="14sp"
+                android:padding="10dp"
+                android:background="@android:color/holo_orange_light"
+                android:textColor="@android:color/white"
+                android:enabled="false"
+                android:layout_marginEnd="4dp" />
+
+            <Button
+                android:id="@+id/connectButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Connect to Device"
+                android:textSize="14sp"
+                android:padding="10dp"
+                android:background="@android:color/holo_blue_light"
+                android:textColor="@android:color/white"
+                android:enabled="false"
+                android:layout_marginStart="4dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Status Display -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Checking Bluetooth..."
+            android:textSize="16sp"
+            android:padding="16dp"
+            android:background="@android:color/background_light"
+            android:minHeight="200dp"
+            android:gravity="top"
+            android:fontFamily="monospace" />
+
+    </ScrollView>
+
+    <!-- Open PDF Reader Button -->
+    <Button
+        android:id="@+id/openPdfButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open PDF Reader"
+        android:textSize="18sp"
+        android:padding="16dp"
+        android:enabled="false"
+        android:background="@android:color/holo_green_light"
+        android:textColor="@android:color/white"
+        android:textStyle="bold" />
+
+</LinearLayout>
