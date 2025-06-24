@@ -177,9 +177,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleReceivedMessage(message: String) {
         println("DEBUG: Received sync message: $message")
+        println("DEBUG: PAGE_CHANGE flag")
 
         when {
             message.startsWith("PAGE_CHANGE:") -> {
+                println("DEBUG: is PAGE_CHANGE: $message")
                 val pageIndex = message.substringAfter("PAGE_CHANGE:").toIntOrNull()
                 if (pageIndex != null && pageIndex != currentPageIndex) {
                     // Set syncing flag to prevent infinite loop
@@ -228,12 +230,14 @@ class MainActivity : AppCompatActivity() {
             val buffer = ByteArray(1024)
             var bytes: Int
 
-            println("DEBUG: ConnectedThread started, listening for sync messages...")
+            println("DEBUG: MainActivity ConnectedThread started, listening for sync messages...")
 
             while (true) {
                 try {
                     bytes = inputStream!!.read(buffer)
                     val receivedMessage = String(buffer, 0, bytes).trim()
+
+                    println("DEBUG: Received message: $receivedMessage")
 
                     // Handle the received message
                     handleReceivedMessage(receivedMessage)

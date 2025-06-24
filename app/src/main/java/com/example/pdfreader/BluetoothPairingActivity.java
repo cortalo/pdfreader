@@ -240,9 +240,10 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                     statusText.setText("✅ Device connected!\nReady to open PDF Reader");
                     Toast.makeText(BluetoothPairingActivity.this, "Device connected! You can now open PDF Reader.", Toast.LENGTH_LONG).show();
 
-                    // Start communication thread
+                    // Create a dummy connected thread just to satisfy isConnected() check
+                    // But don't actually listen for messages (MainActivity will do that)
                     connectedThread = new ConnectedThread(bluetoothSocket);
-                    connectedThread.start();
+                    // Don't start the thread! Just create it for the null check
 
                     updateButtons();
                 });
@@ -326,7 +327,6 @@ public class BluetoothPairingActivity extends AppCompatActivity {
 
                         System.out.println("DEBUG: Connection successful!");
 
-                        // Update UI on main thread
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -335,9 +335,9 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                                     statusText.setText("✅ Connected to: " + (deviceName != null ? deviceName : "Unknown Device") + "\nReady to open PDF Reader");
                                     Toast.makeText(BluetoothPairingActivity.this, "Connected! You can now open PDF Reader.", Toast.LENGTH_LONG).show();
 
-                                    // Start communication thread
+                                    // Create a dummy connected thread just to satisfy isConnected() check
                                     connectedThread = new ConnectedThread(bluetoothSocket);
-                                    connectedThread.start();
+                                    // Don't start the thread! Just create it for the null check
 
                                     updateButtons();
 
@@ -402,7 +402,7 @@ public class BluetoothPairingActivity extends AppCompatActivity {
     }
 
     private boolean isConnected() {
-        return bluetoothSocket != null && bluetoothSocket.isConnected() && connectedThread != null;
+        return bluetoothSocket != null && bluetoothSocket.isConnected();
     }
 
     // Thread for managing Bluetooth connection
@@ -430,32 +430,13 @@ public class BluetoothPairingActivity extends AppCompatActivity {
         }
 
         public void run() {
-            byte[] buffer = new byte[1024];
-            int bytes;
-
-            System.out.println("DEBUG: ConnectedThread started, listening for messages...");
-
-            while (true) {
-                try {
-                    bytes = inputStream.read(buffer);
-                    final String receivedMessage = new String(buffer, 0, bytes).trim();
-
-                    System.out.println("DEBUG: Received message: " + receivedMessage);
-
-                    // No need to update UI here in pairing activity - handled in MainActivity
-
-                } catch (IOException e) {
-                    System.out.println("DEBUG: Connection lost: " + e.getMessage());
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            statusText.setText(statusText.getText() + "\n❌ Connection lost");
-                            Toast.makeText(BluetoothPairingActivity.this, "Connection lost", Toast.LENGTH_SHORT).show();
-                            disconnect();
-                        }
-                    });
-                    break;
-                }
+            System.out.println("DEBUG: ConnectedThread in BTPA - not listening (MainActivity will handle messages)");
+            // Don't listen for messages here - MainActivity will handle all communication
+            // Just keep the thread alive to maintain connection state
+            try {
+                Thread.sleep(Long.MAX_VALUE); // Keep thread alive but inactive
+            } catch (InterruptedException e) {
+                System.out.println("DEBUG: BTPA ConnectedThread interrupted");
             }
         }
 
