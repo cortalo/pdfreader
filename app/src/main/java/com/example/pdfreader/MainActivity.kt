@@ -102,8 +102,6 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         pdfPageView = findViewById(R.id.pdfPageView)
         pageInfo = findViewById(R.id.pageInfo)
-        prevButton = findViewById(R.id.prevButton)
-        nextButton = findViewById(R.id.nextButton)
         connectionStatus = findViewById(R.id.connectionStatus)
     }
 
@@ -134,17 +132,21 @@ class MainActivity : AppCompatActivity() {
             loadSamplePdf()
         }
 
-        prevButton.setOnClickListener {
-            // Go back 2 pages to maintain left/right pairing
-            if (currentPageIndex >= 2) {
-                showPage(currentPageIndex - 2, true)
-            }
-        }
+        // Touch navigation on PDF page
+        pdfPageView.setOnClickListener { view ->
+            if (totalPages == 0) return@setOnClickListener
 
-        nextButton.setOnClickListener {
-            // Go forward 2 pages to maintain left/right pairing
-            if (currentPageIndex + 2 < totalPages) {
-                showPage(currentPageIndex + 2, true)
+            // Server (left page) - tap to go previous
+            if (isLeftPage) {
+                if (currentPageIndex >= 2) {
+                    showPage(currentPageIndex - 2, true)
+                }
+            }
+            // Client (right page) - tap to go next
+            else {
+                if (currentPageIndex + 2 < totalPages) {
+                    showPage(currentPageIndex + 2, true)
+                }
             }
         }
     }
@@ -195,10 +197,6 @@ class MainActivity : AppCompatActivity() {
         // Update UI - show which side this device displays
         val pageRole = if (isLeftPage) "Left" else "Right"
         pageInfo.text = "Page ${pageIndex + 1} of $totalPages ($pageRole)"
-
-        // Update navigation buttons - check if we can go forward/backward by 2 pages
-        prevButton.isEnabled = pageIndex >= 2
-        nextButton.isEnabled = pageIndex + 2 < totalPages
 
         // Send sync message to other device if requested and not already syncing
         if (sendSync && !isSyncing) {
