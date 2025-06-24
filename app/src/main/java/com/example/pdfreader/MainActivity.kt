@@ -13,13 +13,14 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.io.File
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.concurrent.thread
+import androidx.activity.result.contract.ActivityResultContracts
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,6 +41,54 @@ class MainActivity : AppCompatActivity() {
     private var isServer = false
     private var isSyncing = false // Flag to prevent infinite loops
 
+    // Add this property
+    private var isLeftPage = true // Server shows left pages, client shows right pages
+
+    // Add this property at the top of the class
+    private val filePickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { selectedUri ->
+            loadPdfFromUri(selectedUri)
+        }
+    }
+
+    private fun openFilePicker() {
+        try {
+            filePickerLauncher.launch("application/pdf")
+        } catch (e: Exception) {
+            Toast.makeText(this, "No file manager found. Please install a file manager app.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun loadPdfFromUri(uri: android.net.Uri) {
+        Toast.makeText(this, "Loading PDF...", Toast.LENGTH_SHORT).show()
+
+        thread {
+            try {
+                // Copy the PDF from URI to internal storage
+                val inputStream = contentResolver.openInputStream(uri)
+                val pdfFile = File(filesDir, "selected.pdf")
+                val outputStream = FileOutputStream(pdfFile)
+
+                inputStream?.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                runOnUiThread {
+                    openPdf(pdfFile)
+                }
+
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "Error loading PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,14 +107,19 @@ class MainActivity : AppCompatActivity() {
         connectionStatus = findViewById(R.id.connectionStatus)
     }
 
+    // Update the setupBluetooth method
     private fun setupBluetooth() {
         // Get Bluetooth connection from singleton
         val connectionManager = BluetoothConnectionManager.getInstance()
         bluetoothSocket = connectionManager.bluetoothSocket
         isServer = connectionManager.isServer()
 
+        // Server shows left pages (odd page numbers: 1,3,5...), Client shows right pages (even page numbers: 2,4,6...)
+        isLeftPage = isServer
+
         if (connectionManager.isConnected()) {
-            connectionStatus.text = "📶 Connected - Pages will sync automatically"
+            val deviceType = if (isServer) "Server (Left Pages)" else "Client (Right Pages)"
+            connectionStatus.text = "📶 Connected - $deviceType"
             // Start communication thread
             connectedThread = ConnectedThread(bluetoothSocket!!)
             connectedThread!!.start()
@@ -81,46 +135,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         prevButton.setOnClickListener {
-            if (currentPageIndex > 0) {
-                showPage(currentPageIndex - 1, true) // true = send sync message
+            // Go back 2 pages to maintain left/right pairing
+            if (currentPageIndex >= 2) {
+                showPage(currentPageIndex - 2, true)
             }
         }
 
         nextButton.setOnClickListener {
-            if (currentPageIndex < totalPages - 1) {
-                showPage(currentPageIndex + 1, true) // true = send sync message
+            // Go forward 2 pages to maintain left/right pairing
+            if (currentPageIndex + 2 < totalPages) {
+                showPage(currentPageIndex + 2, true)
             }
         }
     }
 
     private fun loadSamplePdf() {
-        Toast.makeText(this, "Loading PDF...", Toast.LENGTH_SHORT).show()
-
-        thread {
-            try {
-                // Download a sample PDF
-                val url = URL("https://css4.pub/2015/usenix/example.pdf")
-                val connection = url.openConnection() as HttpURLConnection
-                val inputStream: InputStream = connection.inputStream
-
-                // Save to internal storage
-                val pdfFile = File(filesDir, "sample.pdf")
-                val outputStream = FileOutputStream(pdfFile)
-                inputStream.copyTo(outputStream)
-                outputStream.close()
-                inputStream.close()
-                connection.disconnect()
-
-                runOnUiThread {
-                    openPdf(pdfFile)
-                }
-
-            } catch (e: Exception) {
-                runOnUiThread {
-                    Toast.makeText(this, "Error loading PDF: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
+        openFilePicker()
     }
 
     private fun openPdf(file: File) {
@@ -129,9 +159,12 @@ class MainActivity : AppCompatActivity() {
             pdfRenderer = PdfRenderer(fileDescriptor)
             totalPages = pdfRenderer!!.pageCount
 
-            showPage(0, false) // Don't send sync message on initial load
+            // Server starts on page 0 (left), Client starts on page 1 (right)
+            val startPage = if (isLeftPage) 0 else 1
+            showPage(startPage, false) // Don't send sync message on initial load
 
-            Toast.makeText(this, "PDF loaded! Navigation will sync between devices", Toast.LENGTH_LONG).show()
+            val deviceRole = if (isLeftPage) "left pages" else "right pages"
+            Toast.makeText(this, "PDF loaded! This device shows $deviceRole", Toast.LENGTH_LONG).show()
 
             // Send PDF loaded message to other device
             sendSyncMessage("PDF_LOADED:$totalPages")
@@ -159,10 +192,13 @@ class MainActivity : AppCompatActivity() {
         // Display the page
         pdfPageView.setImageBitmap(bitmap)
 
-        // Update UI
-        pageInfo.text = "Page ${pageIndex + 1} of $totalPages"
-        prevButton.isEnabled = pageIndex > 0
-        nextButton.isEnabled = pageIndex < totalPages - 1
+        // Update UI - show which side this device displays
+        val pageRole = if (isLeftPage) "Left" else "Right"
+        pageInfo.text = "Page ${pageIndex + 1} of $totalPages ($pageRole)"
+
+        // Update navigation buttons - check if we can go forward/backward by 2 pages
+        prevButton.isEnabled = pageIndex >= 2
+        nextButton.isEnabled = pageIndex + 2 < totalPages
 
         // Send sync message to other device if requested and not already syncing
         if (sendSync && !isSyncing) {
@@ -177,23 +213,32 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleReceivedMessage(message: String) {
         println("DEBUG: Received sync message: $message")
-        println("DEBUG: PAGE_CHANGE flag")
 
         when {
             message.startsWith("PAGE_CHANGE:") -> {
                 println("DEBUG: is PAGE_CHANGE: $message")
-                val pageIndex = message.substringAfter("PAGE_CHANGE:").toIntOrNull()
-                if (pageIndex != null && pageIndex != currentPageIndex) {
-                    // Set syncing flag to prevent infinite loop
-                    isSyncing = true
-                    runOnUiThread {
-                        showPage(pageIndex, false) // Don't send sync message back
-                        Toast.makeText(this, "Synced to page ${pageIndex + 1}", Toast.LENGTH_SHORT).show()
+                val otherDevicePageIndex = message.substringAfter("PAGE_CHANGE:").toIntOrNull()
+                if (otherDevicePageIndex != null) {
+                    // Calculate what page this device should show
+                    // If other device is on page N, this device should show N+1 or N-1
+                    val myPageIndex = if (isLeftPage) {
+                        // If I'm left page device and other device is on page N (right), I should be on N-1
+                        otherDevicePageIndex - 1
+                    } else {
+                        // If I'm right page device and other device is on page N (left), I should be on N+1
+                        otherDevicePageIndex + 1
                     }
-                    // Reset syncing flag after a short delay
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        isSyncing = false
-                    }, 500)
+
+                    if (myPageIndex >= 0 && myPageIndex < totalPages && myPageIndex != currentPageIndex) {
+                        isSyncing = true
+                        runOnUiThread {
+                            showPage(myPageIndex, false) // Don't send sync message back
+                            Toast.makeText(this, "Synced to page ${myPageIndex + 1}", Toast.LENGTH_SHORT).show()
+                        }
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            isSyncing = false
+                        }, 500)
+                    }
                 }
             }
             message.startsWith("PDF_LOADED:") -> {
