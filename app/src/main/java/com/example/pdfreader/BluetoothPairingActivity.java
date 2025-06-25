@@ -174,13 +174,21 @@ public class BluetoothPairingActivity extends AppCompatActivity {
             return;
         }
 
-        // Make device discoverable
-        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); // 5 minutes
-        startActivity(discoverableIntent);
+        // Make device discoverable with proper permission handling
+        try {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); // 5 minutes
+            startActivity(discoverableIntent);
+        } catch (SecurityException e) {
+            System.out.println("DEBUG: SecurityException making device discoverable: " + e.getMessage());
+            Toast.makeText(this, "Permission denied for making device discoverable", Toast.LENGTH_LONG).show();
+            // Don't return here - we can still start the server without making it discoverable
+            // The user can manually make the device discoverable through system settings
+            statusText.setText("⚠️ Starting server without discoverable mode\nOther devices may need to manually find this device");
+        }
 
         isServer = true;
-        statusText.setText("🔵 Starting server...\nMaking device discoverable for 5 minutes");
+        statusText.setText("🔵 Starting server...");
 
         serverThread = new ServerThread();
         serverThread.start();
