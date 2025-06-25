@@ -8,7 +8,7 @@ Tap the left device to go back two pages, tap the right device to go forward two
 
 **Setup (Do this once):**
 1. Pair both devices in Android Bluetooth settings first
-2. Install the app on both devices
+2. Download the apk from release. Install the app on both devices
 
 **Start Reading Session:**
 
