@@ -112,11 +112,12 @@ public class BluetoothPairingActivity extends AppCompatActivity {
         }
 
         // Set up button click listeners
+        // In onCreate() method, modify the toggleButton listener:
         toggleButton.setOnClickListener(v -> {
             if (!hasBluetoothPermissions()) {
                 requestBluetoothPermissions();
             } else {
-                toggleBluetooth();
+                Toast.makeText(this, "Bluetooth permissions already granted", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -526,43 +527,6 @@ public class BluetoothPairingActivity extends AppCompatActivity {
         permissionLauncher.launch(permissions);
     }
 
-    private void toggleBluetooth() {
-        if (bluetoothAdapter == null) {
-            return;
-        }
-
-        if (!hasBluetoothPermissions()) {
-            Toast.makeText(this, "Bluetooth permissions not granted", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        try {
-            if (bluetoothAdapter.isEnabled()) {
-                // Disable Bluetooth
-                stopServer();
-                disconnect();
-                if (bluetoothAdapter.disable()) {
-                    Toast.makeText(this, "Disabling Bluetooth...", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Failed to disable Bluetooth", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                // Enable Bluetooth - requires user permission
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                bluetoothEnableLauncher.launch(enableBtIntent);
-            }
-
-            // Update status after a short delay to allow state change
-            statusText.postDelayed(() -> {
-                updateStatus();
-                updateButtons();
-            }, 1000);
-
-        } catch (SecurityException e) {
-            Toast.makeText(this, "Permission denied: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            requestBluetoothPermissions();
-        }
-    }
 
     private void updateStatus() {
         if (bluetoothAdapter == null) {
@@ -586,7 +550,7 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                     statusText.setText("Bluetooth is enabled\n\n💡 Choose mode:\n• 'Start Server' - let other device connect to you\n• 'Connect' - connect to paired device");
                 }
             } else {
-                statusText.setText("Bluetooth is disabled\nTap 'Enable Bluetooth' to start");
+                statusText.setText("Bluetooth is disabled\nPlease enable Bluetooth in system settings to continue");
             }
         } catch (SecurityException e) {
             statusText.setText("Permission denied checking Bluetooth status");
@@ -596,20 +560,24 @@ public class BluetoothPairingActivity extends AppCompatActivity {
     private void updateButtons() {
         if (bluetoothAdapter == null) {
             toggleButton.setText("Not Available");
+            toggleButton.setEnabled(false);
             disableAllButtons();
             return;
         }
 
         if (!hasBluetoothPermissions()) {
             toggleButton.setText("Grant Permissions");
+            toggleButton.setEnabled(true);
             disableAllButtons();
             return;
         }
 
+        // Once permissions are granted, hide or disable the button
+        toggleButton.setText("Permissions Granted");
+        toggleButton.setEnabled(false);
+
         try {
             if (bluetoothAdapter.isEnabled()) {
-                toggleButton.setText("Disable Bluetooth");
-
                 if (isServer) {
                     serverButton.setText("Stop Server");
                     serverButton.setEnabled(true);
@@ -630,13 +598,13 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                 openPdfButton.setEnabled(isConnected());
 
             } else {
-                toggleButton.setText("Enable Bluetooth");
                 serverButton.setText("Start Server");
                 connectButton.setText("Connect to Device");
                 disableAllButtons();
             }
         } catch (SecurityException e) {
             toggleButton.setText("Grant Permissions");
+            toggleButton.setEnabled(true);
             disableAllButtons();
         }
     }
