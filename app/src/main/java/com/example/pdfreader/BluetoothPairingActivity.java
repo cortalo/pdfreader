@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import android.os.Handler;
 import android.os.Looper;
+import android.app.AlertDialog;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BluetoothPairingActivity extends AppCompatActivity {
 
@@ -289,6 +292,97 @@ public class BluetoothPairingActivity extends AppCompatActivity {
         }
     }
 
+    private void connectToSelectedDevice(BluetoothDevice device) {
+        try {
+            String deviceName = device.getName();
+            String deviceAddress = device.getAddress();
+
+            System.out.println("DEBUG: Connecting to: " + deviceName + " (" + deviceAddress + ")");
+            statusText.setText("🔵 Connecting to: " + (deviceName != null ? deviceName : "Unknown Device") + "\n" + deviceAddress + "\n\nMake sure the other device is in server mode!");
+
+            connectButton.setText("Connecting...");
+            connectButton.setEnabled(false);
+
+            // Connect in background thread
+            new Thread(() -> {
+                try {
+                    System.out.println("DEBUG: Creating RFCOMM socket...");
+                    bluetoothSocket = device.createRfcommSocketToServiceRecord(SPP_UUID);
+
+                    System.out.println("DEBUG: Attempting to connect...");
+                    bluetoothSocket.connect();
+
+                    System.out.println("DEBUG: Connection successful!");
+
+                    runOnUiThread(() -> {
+                        try {
+                            String deviceName1 = device.getName();
+                            statusText.setText("✅ Connected to: " + (deviceName1 != null ? deviceName1 : "Unknown Device") + "\nReady to open PDF Reader");
+                            Toast.makeText(BluetoothPairingActivity.this, "Connected! You can now open PDF Reader.", Toast.LENGTH_LONG).show();
+
+                            // Create a dummy connected thread just to satisfy isConnected() check
+                            connectedThread = new ConnectedThread(bluetoothSocket);
+                            // Don't start the thread! Just create it for the null check
+
+                            updateButtons();
+
+                        } catch (SecurityException e) {
+                            System.out.println("DEBUG: SecurityException updating UI: " + e.getMessage());
+                        }
+                    });
+
+                } catch (SecurityException e) {
+                    System.out.println("DEBUG: SecurityException during connection: " + e.getMessage());
+                    runOnUiThread(() -> {
+                        statusText.setText("❌ Connection failed: Permission denied");
+                        Toast.makeText(BluetoothPairingActivity.this, "Permission denied for connection", Toast.LENGTH_SHORT).show();
+                        updateButtons();
+                    });
+                } catch (IOException e) {
+                    System.out.println("DEBUG: IOException during connection: " + e.getMessage());
+                    runOnUiThread(() -> {
+                        statusText.setText("❌ Connection failed: " + e.getMessage() + "\n\n💡 Try:\n1. Make sure other device is in server mode\n2. Use 'Start Server' on this device instead");
+                        Toast.makeText(BluetoothPairingActivity.this, "Connection failed - try server mode instead", Toast.LENGTH_LONG).show();
+                        updateButtons();
+                    });
+                }
+            }).start();
+
+        } catch (SecurityException e) {
+            System.out.println("DEBUG: SecurityException getting device info: " + e.getMessage());
+            statusText.setText("Permission denied accessing device information");
+            Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showDeviceSelectionDialog(List<BluetoothDevice> devices) {
+        try {
+            // Create display names for the devices
+            String[] deviceNames = new String[devices.size()];
+            for (int i = 0; i < devices.size(); i++) {
+                BluetoothDevice device = devices.get(i);
+                String name = device.getName();
+                String address = device.getAddress();
+                deviceNames[i] = (name != null ? name : "Unknown Device") + "\n" + address;
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Select Device to Connect")
+                    .setItems(deviceNames, (dialog, which) -> {
+                        pairedDevice = devices.get(which);
+                        connectToSelectedDevice(pairedDevice);
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> {
+                        dialog.dismiss();
+                        statusText.setText("Connection cancelled");
+                    })
+                    .show();
+
+        } catch (SecurityException e) {
+            System.out.println("DEBUG: SecurityException creating device list: " + e.getMessage());
+            Toast.makeText(this, "Permission denied accessing device names", Toast.LENGTH_SHORT).show();
+        }
+    }
     private void connectToPairedDevice() {
         System.out.println("DEBUG: Looking for paired devices...");
 
@@ -312,67 +406,14 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                 return;
             }
 
-            // Get the first (and presumably only) paired device
-            pairedDevice = pairedDevices.iterator().next();
-            String deviceName = pairedDevice.getName();
-            String deviceAddress = pairedDevice.getAddress();
-
-            System.out.println("DEBUG: Connecting to: " + deviceName + " (" + deviceAddress + ")");
-            statusText.setText("🔵 Connecting to: " + (deviceName != null ? deviceName : "Unknown Device") + "\n" + deviceAddress + "\n\nMake sure the other device is in server mode!");
-
-            connectButton.setText("Connecting...");
-            connectButton.setEnabled(false);
-
-            // Connect in background thread
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        System.out.println("DEBUG: Creating RFCOMM socket...");
-                        bluetoothSocket = pairedDevice.createRfcommSocketToServiceRecord(SPP_UUID);
-
-                        System.out.println("DEBUG: Attempting to connect...");
-                        bluetoothSocket.connect();
-
-                        System.out.println("DEBUG: Connection successful!");
-
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    String deviceName = pairedDevice.getName();
-                                    statusText.setText("✅ Connected to: " + (deviceName != null ? deviceName : "Unknown Device") + "\nReady to open PDF Reader");
-                                    Toast.makeText(BluetoothPairingActivity.this, "Connected! You can now open PDF Reader.", Toast.LENGTH_LONG).show();
-
-                                    // Create a dummy connected thread just to satisfy isConnected() check
-                                    connectedThread = new ConnectedThread(bluetoothSocket);
-                                    // Don't start the thread! Just create it for the null check
-
-                                    updateButtons();
-
-                                } catch (SecurityException e) {
-                                    System.out.println("DEBUG: SecurityException updating UI: " + e.getMessage());
-                                }
-                            }
-                        });
-
-                    } catch (SecurityException e) {
-                        System.out.println("DEBUG: SecurityException during connection: " + e.getMessage());
-                        runOnUiThread(() -> {
-                            statusText.setText("❌ Connection failed: Permission denied");
-                            Toast.makeText(BluetoothPairingActivity.this, "Permission denied for connection", Toast.LENGTH_SHORT).show();
-                            updateButtons();
-                        });
-                    } catch (IOException e) {
-                        System.out.println("DEBUG: IOException during connection: " + e.getMessage());
-                        runOnUiThread(() -> {
-                            statusText.setText("❌ Connection failed: " + e.getMessage() + "\n\n💡 Try:\n1. Make sure other device is in server mode\n2. Use 'Start Server' on this device instead");
-                            Toast.makeText(BluetoothPairingActivity.this, "Connection failed - try server mode instead", Toast.LENGTH_LONG).show();
-                            updateButtons();
-                        });
-                    }
-                }
-            }).start();
+            if (pairedDevices.size() == 1) {
+                // Only one device, connect directly
+                pairedDevice = pairedDevices.iterator().next();
+                connectToSelectedDevice(pairedDevice);
+            } else {
+                // Multiple devices, show selection dialog
+                showDeviceSelectionDialog(new ArrayList<>(pairedDevices));
+            }
 
         } catch (SecurityException e) {
             System.out.println("DEBUG: SecurityException getting paired devices: " + e.getMessage());
@@ -590,7 +631,7 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                         connectButton.setText("Disconnect");
                         connectButton.setEnabled(true);
                     } else {
-                        connectButton.setText("Connect to Device");
+                        connectButton.setText("Select Device");
                         connectButton.setEnabled(true);
                     }
                 }
@@ -599,7 +640,8 @@ public class BluetoothPairingActivity extends AppCompatActivity {
 
             } else {
                 serverButton.setText("Start Server");
-                connectButton.setText("Connect to Device");
+                // connectButton.setText("Connect to Device");
+                connectButton.setText("Select Device");
                 disableAllButtons();
             }
         } catch (SecurityException e) {
