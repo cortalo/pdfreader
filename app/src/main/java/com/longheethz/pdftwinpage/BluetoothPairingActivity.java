@@ -588,7 +588,8 @@ public class BluetoothPairingActivity extends AppCompatActivity {
                 } else if (isServer) {
                     statusText.setText("🟢 Server mode active\nWaiting for connections...");
                 } else {
-                    statusText.setText("Bluetooth is enabled\n\n💡 Choose mode:\n• 'Start Server' - let other device connect to you\n• 'Connect' - connect to paired device");
+                    statusText.setText("Bluetooth is enabled\n\n📱 First time setup:\n1. Install this app on another device\n2. Pair devices in Bluetooth settings\n\n💡 Choose mode:\n• 'Start Server' - let other device connect to you\n• 'Connect' - connect to paired device");
+                    // statusText.setText("Bluetooth is enabled\n\n💡 Choose mode:\n• 'Start Server' - let other device connect to you\n• 'Connect' - connect to paired device");
                 }
             } else {
                 statusText.setText("Bluetooth is disabled\nPlease enable Bluetooth in system settings to continue");
