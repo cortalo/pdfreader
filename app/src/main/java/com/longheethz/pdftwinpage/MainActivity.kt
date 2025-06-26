@@ -1,4 +1,4 @@
-package com.example.pdfreader
+package com.longheethz.pdftwinpage
 
 import android.bluetooth.BluetoothSocket
 import android.graphics.Bitmap
@@ -16,8 +16,6 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import kotlin.concurrent.thread
 import androidx.activity.result.contract.ActivityResultContracts
 import java.io.FileOutputStream

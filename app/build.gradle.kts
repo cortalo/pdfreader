@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.pdfreader"
+    namespace = "com.longheethz.pdftwinpage"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.pdfreader"
+        applicationId = "com.longheethz.pdftwinpage"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.example.pdfreader
+package com.longheethz.pdftwinpage
 
 import org.junit.Test
 

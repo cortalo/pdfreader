@@ -1,4 +1,4 @@
-package com.example.pdfreader;
+package com.longheethz.pdftwinpage;
 
 import android.os.Bundle;
 import android.bluetooth.BluetoothAdapter;
