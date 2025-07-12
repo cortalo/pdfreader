@@ -11,8 +11,8 @@ android {
         applicationId = "com.longheethz.pdftwinpage"
         minSdk = 28
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.01"
+        versionCode = 5
+        versionName = "1.02"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

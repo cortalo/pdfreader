@@ -4,6 +4,10 @@ This app lets two devices read a PDF book together over Bluetooth. One device sh
 
 Tap the left device to go back two pages, tap the right device to go forward two pages, just like flipping through a real book.
 
+<a href="https://play.google.com/store/apps/details?id=com.longheethz.pdftwinpage">
+  <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="165">
+</a>
+
 ## Quick Start
 
 **Setup (Do this once):**
