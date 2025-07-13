@@ -1,12 +1,16 @@
 package com.longheethz.pdftwinpage
 
 import android.bluetooth.BluetoothSocket
+import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -41,6 +45,8 @@ class MainActivity : AppCompatActivity() {
 
     // Add this property
     private var isLeftPage = true // Server shows left pages, client shows right pages
+    private lateinit var sharedPreferences: SharedPreferences
+    private var readingMode = SettingsActivity.MODE_ODD_EVEN
 
     // Add this property at the top of the class
     private val filePickerLauncher = registerForActivityResult(
@@ -92,14 +98,32 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initViews()
+        loadSettings()
         setupBluetooth()
         setupListeners()
         loadSamplePdf()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Reload settings when returning from SettingsActivity
+        val previousMode = readingMode
+        loadSettings()
+        
+        // If reading mode changed, sync with the other device
+        if (previousMode != readingMode && totalPages > 0) {
+            sendSyncMessage("MODE_CHANGE:$readingMode")
+        }
+    }
+
     private fun initViews() {
         pdfPageView = findViewById(R.id.pdfPageView)
         pdfPageView.setBackgroundColor(android.graphics.Color.WHITE)
+    }
+
+    private fun loadSettings() {
+        sharedPreferences = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE)
+        readingMode = sharedPreferences.getString(SettingsActivity.READING_MODE_KEY, SettingsActivity.MODE_ODD_EVEN) ?: SettingsActivity.MODE_ODD_EVEN
     }
 
     private fun setupBluetooth() {
@@ -125,18 +149,43 @@ class MainActivity : AppCompatActivity() {
         pdfPageView.setOnClickListener { view ->
             if (totalPages == 0) return@setOnClickListener
 
-            // Server (left page) - tap to go previous
-            if (isLeftPage) {
-                if (currentPageIndex >= 2) {
-                    showPage(currentPageIndex - 2, true)
+            when (readingMode) {
+                SettingsActivity.MODE_ODD_EVEN -> {
+                    // Server (left page) - tap to go previous
+                    if (isLeftPage) {
+                        if (currentPageIndex >= 2) {
+                            showPage(currentPageIndex - 2, true)
+                        }
+                    }
+                    // Client (right page) - tap to go next
+                    else {
+                        if (currentPageIndex + 2 < totalPages) {
+                            showPage(currentPageIndex + 2, true)
+                        }
+                    }
+                }
+                SettingsActivity.MODE_SEQUENTIAL -> {
+                    // Sequential mode - advance by 1 page
+                    if (isLeftPage) {
+                        // Server goes backward by 1
+                        if (currentPageIndex >= 1) {
+                            showPage(currentPageIndex - 1, true)
+                        }
+                    } else {
+                        // Client goes forward by 1
+                        if (currentPageIndex + 1 < totalPages) {
+                            showPage(currentPageIndex + 1, true)
+                        }
+                    }
                 }
             }
-            // Client (right page) - tap to go next
-            else {
-                if (currentPageIndex + 2 < totalPages) {
-                    showPage(currentPageIndex + 2, true)
-                }
-            }
+        }
+
+        // Long press to open settings
+        pdfPageView.setOnLongClickListener { view ->
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
+            true
         }
 
         // Auto-open file picker when activity starts
@@ -153,8 +202,18 @@ class MainActivity : AppCompatActivity() {
             pdfRenderer = PdfRenderer(fileDescriptor)
             totalPages = pdfRenderer!!.pageCount
 
-            // Server starts on page 0 (left), Client starts on page 1 (right)
-            val startPage = if (isLeftPage) 0 else 1
+            // Calculate start page based on reading mode
+            val startPage = when (readingMode) {
+                SettingsActivity.MODE_ODD_EVEN -> {
+                    // Server starts on page 0 (left), Client starts on page 1 (right)
+                    if (isLeftPage) 0 else 1
+                }
+                SettingsActivity.MODE_SEQUENTIAL -> {
+                    // Server starts on page 0, Client starts on page 1
+                    if (isLeftPage) 0 else 1
+                }
+                else -> if (isLeftPage) 0 else 1
+            }
             showPage(startPage, false) // Don't send sync message on initial load
 
             // Send PDF loaded message to other device
@@ -207,11 +266,29 @@ class MainActivity : AppCompatActivity() {
                 println("DEBUG: is PAGE_CHANGE: $message")
                 val otherDevicePageIndex = message.substringAfter("PAGE_CHANGE:").toIntOrNull()
                 if (otherDevicePageIndex != null) {
-                    // Calculate what page this device should show
-                    val myPageIndex = if (isLeftPage) {
-                        otherDevicePageIndex - 1
-                    } else {
-                        otherDevicePageIndex + 1
+                    // Calculate what page this device should show based on reading mode
+                    val myPageIndex = when (readingMode) {
+                        SettingsActivity.MODE_ODD_EVEN -> {
+                            if (isLeftPage) {
+                                otherDevicePageIndex - 1
+                            } else {
+                                otherDevicePageIndex + 1
+                            }
+                        }
+                        SettingsActivity.MODE_SEQUENTIAL -> {
+                            if (isLeftPage) {
+                                otherDevicePageIndex - 1
+                            } else {
+                                otherDevicePageIndex + 1
+                            }
+                        }
+                        else -> {
+                            if (isLeftPage) {
+                                otherDevicePageIndex - 1
+                            } else {
+                                otherDevicePageIndex + 1
+                            }
+                        }
                     }
 
                     if (myPageIndex >= 0 && myPageIndex < totalPages && myPageIndex != currentPageIndex) {
@@ -228,6 +305,17 @@ class MainActivity : AppCompatActivity() {
             message.startsWith("PDF_LOADED:") -> {
                 // Just log, no UI feedback
                 println("DEBUG: Other device loaded PDF")
+            }
+            message.startsWith("MODE_CHANGE:") -> {
+                val newMode = message.substringAfter("MODE_CHANGE:")
+                if (newMode != readingMode) {
+                    readingMode = newMode
+                    // Update SharedPreferences to keep both devices in sync
+                    sharedPreferences.edit()
+                        .putString(SettingsActivity.READING_MODE_KEY, newMode)
+                        .apply()
+                    println("DEBUG: Reading mode changed to: $newMode")
+                }
             }
         }
     }
@@ -299,6 +387,22 @@ class MainActivity : AppCompatActivity() {
         pdfRenderer?.close()
         connectedThread?.cancel()
         bluetoothSocket?.close()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onBackPressed() {

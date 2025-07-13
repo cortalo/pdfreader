@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Reading Mode"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <RadioGroup
+        android:id="@+id/readingModeGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/modeOddEven"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Odd/Even Pages (Mode 1)"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp"
+            android:checked="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="One device shows odd pages, the other shows even pages. Tap advances by 2 pages."
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginLeft="32dp"
+            android:layout_marginBottom="16dp" />
+
+        <RadioButton
+            android:id="@+id/modeSequential"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sequential Pages (Mode 2)"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="One device is always 1 page ahead of the other. Tap advances by 1 page."
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:layout_marginLeft="32dp"
+            android:layout_marginBottom="24dp" />
+
+    </RadioGroup>
+
+    <Button
+        android:id="@+id/saveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Settings"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>

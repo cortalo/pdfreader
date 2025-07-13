@@ -1,8 +1,12 @@
 # Synchronized PDF Reader
 
-This app lets two devices read a PDF book together over Bluetooth. One device shows left pages, the other shows right pages, just like a real book.
+This app lets two devices read a PDF book together over Bluetooth with two reading modes:
 
-Tap the left device to go back two pages, tap the right device to go forward two pages, just like flipping through a real book.
+**Mode 1 (Odd/Even)**: One device shows odd pages, the other shows even pages, like a real book. Tap advances by 2 pages.
+
+**Mode 2 (Sequential)**: One device is always 1 page ahead of the other. Tap advances by 1 page.
+
+Easily switch between modes during reading via the settings menu.
 
 <a href="https://play.google.com/store/apps/details?id=com.longheethz.pdftwinpage">
   <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="165">
@@ -35,9 +39,9 @@ Tap the left device to go back two pages, tap the right device to go forward two
 3. Start reading together!
 
 **Reading:**
-- Left device shows odd pages (1, 3, 5...)
-- Right device shows even pages (2, 4, 6...)
-- Tap left device to go back, tap right device to go forward
+- **Mode 1 (Odd/Even)**: Left device shows odd pages (1, 3, 5...), right device shows even pages (2, 4, 6...). Tap advances by 2 pages.
+- **Mode 2 (Sequential)**: One device is 1 page ahead. Tap advances by 1 page.
+- **Settings**: Long-press the PDF or use the menu to change reading modes on the fly.
 
 
 ## Features
@@ -58,6 +62,12 @@ Tap the left device to go back two pages, tap the right device to go forward two
 - **High-quality Rendering**: Uses Android's PdfRenderer for crisp page display
 - **File Picker Integration**: Easy PDF selection from device storage
 - **Responsive Display**: Pages scale to fit screen size
+
+### ⚙️ Settings & Reading Modes
+- **Dual Reading Modes**: Switch between Odd/Even and Sequential page modes
+- **Instant Mode Changes**: Settings apply immediately without app restart
+- **Easy Access**: Long-press PDF or use menu to access settings
+- **Device Synchronization**: Mode changes sync automatically between devices
 
 ## How It Works
 
@@ -125,15 +135,17 @@ Tap the left device to go back two pages, tap the right device to go forward two
 
 ### Navigation
 - **Tap anywhere** on the PDF to navigate
-- **Server device**: Tap to go to previous page pair
-- **Client device**: Tap to go to next page pair
+- **Mode 1 (Odd/Even)**: Server device taps to go back 2 pages, client device taps to go forward 2 pages
+- **Mode 2 (Sequential)**: Server device taps to go back 1 page, client device taps to go forward 1 page
 - **Automatic sync**: Both devices update simultaneously
+- **Settings access**: Long-press anywhere on PDF to open settings
 
 ## Technical Architecture
 
 ### Core Components
 - **BluetoothPairingActivity**: Handles device pairing and connection setup
 - **MainActivity**: PDF rendering and synchronized navigation
+- **SettingsActivity**: Reading mode configuration and preferences
 - **BluetoothConnectionManager**: Singleton for connection state management
 - **ConnectedThread**: Manages Bluetooth communication between devices
 
@@ -142,6 +154,7 @@ Tap the left device to go back two pages, tap the right device to go forward two
 - Simple text-based messages for synchronization:
     - `PAGE_CHANGE:n` - Notifies page navigation
     - `PDF_LOADED:n` - Confirms PDF loading with page count
+    - `MODE_CHANGE:mode` - Syncs reading mode changes between devices
 
 ### PDF Rendering
 - Utilizes Android's `PdfRenderer` class
@@ -169,13 +182,15 @@ Tap the left device to go back two pages, tap the right device to go forward two
 
 ### Project Structure
 ```
-src/main/java/com/example/pdfreader/
+src/main/java/com/longheethz/pdftwinpage/
 ├── BluetoothPairingActivity.java    # Connection setup UI
 ├── MainActivity.kt                   # PDF viewer and sync logic
+├── SettingsActivity.kt              # Reading mode settings
 ├── BluetoothConnectionManager.java   # Connection state management
 └── res/layout/
     ├── activity_bluetooth_pairing.xml
-    └── activity_main.xml
+    ├── activity_main.xml
+    └── activity_settings.xml
 ```
 
 ### Key Technologies
